@@ -1,0 +1,211 @@
+<html>
+<head>
+ 
+  <title>Welcome to Santosh's Store</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f2f5;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    .item {
+      background: #f9f9f9;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 10px;
+      border-left: 5px solid #007bff;
+    }
+
+    .item img {
+      max-width: 100%;
+      height: auto;
+      margin-top: 10px;
+      border-radius: 8px;
+    }
+
+    .price {
+      color: green;
+      font-weight: bold;
+    }
+
+    .contact {
+      margin-top: 10px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #search {
+      margin-bottom: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Welcome to Santosh's Store</h2>
+
+    <div id="authSection">
+      <input type="text" id="username" placeholder="Seller Name">
+      <button onclick="login()">Login / Register</button>
+    </div>
+
+    <div id="mainApp" class="hidden">
+      <p>Welcome, <span id="userDisplay"></span>!</p>
+
+      <input type="text" id="search" placeholder="Search items..." onkeyup="filterItems()">
+
+      <input type="text" id="itemName" placeholder="Item Name">
+      <textarea id="itemDesc" rows="3" placeholder="Item Description"></textarea>
+      <input type="number" id="itemPrice" placeholder="Price (₹)">
+      <input type="file" id="itemImage">
+      <input type="text" id="whatsapp" placeholder="WhatsApp Number (optional)">
+      <button onclick="addItem()">Add Item</button>
+
+      <div id="itemsList"></div>
+    </div>
+  </div>
+
+  <script>
+    function login() {
+      const username = document.getElementById('username').value.trim();
+      if (!username) {
+        alert('Please enter a seller name.');
+        return;
+      }
+      localStorage.setItem('currentUser', username);
+      document.getElementById('authSection').classList.add('hidden');
+      document.getElementById('mainApp').classList.remove('hidden');
+      document.getElementById('userDisplay').textContent = username;
+      loadItems();
+    }
+
+    function addItem() {
+      const name = document.getElementById('itemName').value.trim();
+      const desc = document.getElementById('itemDesc').value.trim();
+      const price = document.getElementById('itemPrice').value.trim();
+      const file = document.getElementById('itemImage').files[0];
+      const whatsapp = document.getElementById('whatsapp').value.trim();
+
+      if (!name || !desc || !price || !file) {
+        alert("Fill all fields and upload an image.");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function () {
+        const imgData = reader.result;
+        const item = {
+          id: Date.now(),
+          name, desc, price,
+          image: imgData,
+          user: localStorage.getItem('currentUser'),
+          whatsapp
+        };
+
+        const items = JSON.parse(localStorage.getItem('items') || '[]');
+        items.unshift(item);
+        localStorage.setItem('items', JSON.stringify(items));
+        displayItems(items);
+        clearForm();
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearForm() {
+      document.getElementById('itemName').value = '';
+      document.getElementById('itemDesc').value = '';
+      document.getElementById('itemPrice').value = '';
+      document.getElementById('itemImage').value = '';
+      document.getElementById('whatsapp').value = '';
+    }
+
+    function loadItems() {
+      const items = JSON.parse(localStorage.getItem('items') || '[]');
+      displayItems(items);
+    }
+
+    function displayItems(items) {
+      const list = document.getElementById('itemsList');
+      list.innerHTML = '';
+      const currentUser = localStorage.getItem('currentUser');
+
+      items.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'item';
+        div.innerHTML = `
+          <h4>${item.name}</h4>
+          <p>${item.desc}</p>
+          <p class="price">₹${item.price}</p>
+          <img src="${item.image}">
+          ${item.whatsapp ? `<div class="contact"><a href="https://wa.me/${item.whatsapp}" target="_blank">Contact on WhatsApp</a></div>` : ''}
+          ${item.user === currentUser ? `<button onclick="deleteItem(${item.id})" style="background:red; margin-top:10px;">Delete</button>` : ''}
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function deleteItem(id) {
+      let items = JSON.parse(localStorage.getItem('items') || '[]');
+      // Filter out the item with the matching id
+      items = items.filter(item => item.id !== id);
+      // Update the items in localStorage
+      localStorage.setItem('items', JSON.stringify(items));
+      // Refresh the item list on the page
+      displayItems(items);
+    }
+
+    function filterItems() {
+      const query = document.getElementById('search').value.toLowerCase();
+      const allItems = JSON.parse(localStorage.getItem('items') || '[]');
+      const filtered = allItems.filter(item =>
+        item.name.toLowerCase().includes(query) ||
+        item.desc.toLowerCase().includes(query)
+      );
+      displayItems(filtered);
+    }
+
+    window.onload = function () {
+
+      localStorage.removeItem('currentUser'); 
+
+  
+      document.getElementById('authSection').classList.remove('hidden');
+      document.getElementById('mainApp').classList.add('hidden');
+    };
+  </script>
+
+</body>
+</html>
